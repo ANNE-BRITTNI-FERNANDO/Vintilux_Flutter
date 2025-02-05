@@ -34,6 +34,11 @@ class Product {
   String get fullImageUrl => ApiConfig.getImageUrl(image);
   List<String> get fullGalleryUrls => gallery.map((img) => ApiConfig.getImageUrl(img)).toList();
   bool get inStock => quantity > 0;
+  String get imageUrl => image.startsWith('http') 
+      ? image 
+      : '${ApiConfig.storageUrl}/$image';
+
+  String? get color => colors.isNotEmpty ? colors.first : null;
 
   factory Product.fromJson(Map<String, dynamic> json) {
     // Handle both full product response and simplified cart/wishlist response

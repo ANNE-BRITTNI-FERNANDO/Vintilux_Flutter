@@ -39,6 +39,14 @@ class WishlistProvider with ChangeNotifier {
     }
   }
 
+  Future<void> toggleWishlist(Product product) async {
+    if (isInWishlist(product)) {
+      await removeFromWishlist(product);
+    } else {
+      await addToWishlist(product);
+    }
+  }
+
   void clearError() {
     _error = '';
     notifyListeners();

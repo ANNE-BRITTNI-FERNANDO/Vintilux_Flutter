@@ -47,6 +47,16 @@ class CartProvider with ChangeNotifier {
 
   double get total => _items.fold(0, (sum, item) => sum + item.total);
 
+  double get totalAmount {
+    return items.fold(0.0, (sum, item) => sum + (item.product.price * item.quantity));
+  }
+
+  void clear() {
+    _items = [];
+    _error = '';
+    notifyListeners();
+  }
+
   Future<void> fetchCart() async {
     try {
       if (!_authProvider.isAuthenticated) {
@@ -78,7 +88,7 @@ class CartProvider with ChangeNotifier {
               price: (item['product']['product_price'] as num).toDouble(),
               size: '', // API doesn't return this
               colors: [], // API doesn't return this
-              quantity: 2, // Set to actual stock quantity from API
+              quantity: item['product']['stock_quantity'] ?? 4, // Get actual stock quantity from API
               category: '', // API doesn't return this
               image: item['product']['product_image'],
               gallery: [], // API doesn't return this
@@ -93,7 +103,7 @@ class CartProvider with ChangeNotifier {
               product: product,
               quantity: int.parse(item['quantity'].toString()),
               price: (item['price'] as num).toDouble(),
-              color: item['color'] ?? 'Black', // Default to Black if no color specified
+              color: item['color'] ?? '',
               createdAt: DateTime.parse(item['created_at']),
               updatedAt: DateTime.parse(item['updated_at']),
             );
@@ -223,23 +233,23 @@ class CartProvider with ChangeNotifier {
     }
 
     try {
-      // Check if product already exists in cart with same color
+      // Check if the product is already in cart
       final existingItem = _items.firstWhere(
-        (item) => item.product.id == product.id && item.color == color,
+        (item) => item.product.id == product.id,
         orElse: () => CartItem(
           id: '',
           userId: '',
           product: product,
           quantity: 0,
-          price: product.price,
-          color: color,
+          price: 0,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         ),
       );
 
-      if (existingItem.id.isNotEmpty) {
-        _error = 'Product with selected color is already in your cart';
+      // Check if adding one more would exceed stock
+      if (existingItem.quantity >= product.quantity) {
+        _error = 'Cannot add more than available stock (${product.quantity} items)';
         notifyListeners();
         return;
       }
@@ -329,5 +339,63 @@ class CartProvider with ChangeNotifier {
   void clearError() {
     _error = '';
     notifyListeners();
+  }
+
+  Future<void> _saveCartToServer() async {
+    try {
+      final token = _authProvider.token;
+      if (token == null) {
+        throw Exception('No auth token available');
+      }
+
+      final response = await http.put(
+        Uri.parse(ApiConfig.cartEndpoint),
+        headers: ApiConfig.getAuthHeaders(token),
+        body: json.encode({
+          'items': _items.map((item) => {
+            'product_id': item.product.id,
+            'quantity': item.quantity,
+          }).toList(),
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to save cart to server');
+      }
+    } catch (e) {
+      _error = e.toString();
+      developer.log('Error saving cart to server: $_error');
+    }
+  }
+
+  Future<void> clearAfterOrder() async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      final token = _authProvider.token;
+      if (token == null) {
+        throw Exception('No auth token available');
+      }
+
+      // Clear cart on server
+      final response = await http.post(
+        Uri.parse('${ApiConfig.cartEndpoint}/clear'),
+        headers: ApiConfig.getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        _items = [];
+        _error = '';
+      } else {
+        throw Exception('Failed to clear cart');
+      }
+    } catch (e) {
+      _error = e.toString();
+      developer.log('Error clearing cart: $_error');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 }

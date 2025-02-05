@@ -12,7 +12,7 @@ class ProductService {
     try {
       final token = await storage.read(key: 'token');
       final response = await http.get(
-        Uri.parse(ApiConfig.baseUrl + ApiConfig.products),
+        Uri.parse(ApiConfig.productsEndpoint),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -45,7 +45,7 @@ class ProductService {
     try {
       final token = await storage.read(key: 'token');
       final response = await http.get(
-        Uri.parse(ApiConfig.baseUrl + ApiConfig.product + productId),
+        Uri.parse('${ApiConfig.productDetailsEndpoint}/$productId'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

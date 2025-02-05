@@ -3,47 +3,43 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../device_info/device_info_screen.dart';
 import 'edit_profile_screen.dart';
+import '../../providers/theme_provider.dart';
+import '../../widgets/base_screen_layout.dart'; // Correct import path
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, _) {
-        if (!authProvider.isAuthenticated) {
-          return Center(
-            child: ElevatedButton(
-              onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
-              child: const Text('Login to view profile'),
-            ),
-          );
-        }
-
-        final user = authProvider.user;
-        if (user == null) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Profile'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: () async {
-                  await authProvider.logout();
-                  Navigator.pushReplacementNamed(context, '/login');
-                },
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+    return BaseScreenLayout(
+      scaffoldKey: scaffoldKey,
+      title: 'Profile',
+      currentIndex: 4, // Profile is index 4
+      onNavIndexChanged: (index) {
+        // Navigation will be handled by BaseScreenLayout
+      },
+      body: Consumer<AuthProvider>(
+        builder: (context, authProvider, _) {
+          if (!authProvider.isAuthenticated) {
+            return Center(
+              child: ElevatedButton(
+                onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                child: const Text('Login to view profile'),
               ),
-            ],
-          ),
-          body: SingleChildScrollView(
+            );
+          }
+
+          final user = authProvider.user;
+          if (user == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Profile Header
                 Center(
                   child: Column(
                     children: [
@@ -123,6 +119,23 @@ class ProfileScreen extends StatelessWidget {
                   },
                 ),
 
+                ListTile(
+                  leading: Icon(
+                    Theme.of(context).brightness == Brightness.dark
+                        ? Icons.dark_mode
+                        : Icons.light_mode,
+                  ),
+                  title: const Text('Dark Mode'),
+                  trailing: Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, child) {
+                      return Switch(
+                        value: themeProvider.isDarkMode,
+                        onChanged: (value) => themeProvider.toggleTheme(),
+                      );
+                    },
+                  ),
+                ),
+
                 const SizedBox(height: 32),
                 Center(
                   child: TextButton.icon(
@@ -145,9 +158,9 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

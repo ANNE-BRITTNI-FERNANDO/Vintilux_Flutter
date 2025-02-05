@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/wishlist_provider.dart';
 import '../../models/product_model.dart';
 import '../product/product_details_screen.dart';
+import '../../widgets/base_screen_layout.dart';
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({Key? key}) : super(key: key);
@@ -23,19 +24,14 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Wishlist'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_cart),
-            onPressed: () {
-              // Navigate to cart
-              Navigator.pushNamed(context, '/cart');
-            },
-          ),
-        ],
-      ),
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+    return BaseScreenLayout(
+      scaffoldKey: scaffoldKey,
+      title: 'My Wishlist',
+      currentIndex: 1, // Wishlist is index 1
+      onNavIndexChanged: (index) {
+        // Navigation will be handled by BaseScreenLayout
+      },
       body: Consumer<WishlistProvider>(
         builder: (context, wishlistProvider, _) {
           if (wishlistProvider.isLoading) {
@@ -67,30 +63,19 @@ class _WishlistScreenState extends State<WishlistScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.favorite_border,
                     size: 64,
-                    color: Colors.grey[400],
+                    color: Colors.grey,
                   ),
                   const SizedBox(height: 16),
-                  Text(
+                  const Text(
                     'Your wishlist is empty',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 18),
                   ),
                   const SizedBox(height: 16),
                   TextButton(
-                    onPressed: () {
-                      Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '/home',
-                        (route) => false,
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: Theme.of(context).primaryColor,
-                    ),
+                    onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
                     child: const Text('Continue Shopping'),
                   ),
                 ],
@@ -99,82 +84,43 @@ class _WishlistScreenState extends State<WishlistScreen> {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(8),
             itemCount: wishlistProvider.items.length,
             itemBuilder: (context, index) {
               final product = wishlistProvider.items[index];
               return Card(
-                margin: const EdgeInsets.only(bottom: 8),
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(
-                  contentPadding: const EdgeInsets.all(8),
-                  leading: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      product.fullImageUrl,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 80,
-                          height: 80,
-                          color: Colors.grey[200],
-                          child: const Icon(Icons.image_not_supported),
-                        );
-                      },
-                    ),
+                  leading: Image.network(
+                    product.fullImageUrl,
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
                   ),
-                  title: Text(
-                    product.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  title: Text(product.name),
+                  subtitle: Text('₹${product.price.toStringAsFixed(2)}'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () async {
+                      await wishlistProvider.removeFromWishlist(product);
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Removed from wishlist'),
+                          duration: Duration(seconds: 1),
+                        ),
+                      );
+                    },
                   ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 4),
-                      Text(
-                        '₹${product.price.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          color: Theme.of(context).primaryColor,
-                          fontWeight: FontWeight.bold,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductDetailsScreen(
+                          product: product,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ProductDetailsScreen(
-                                      product: product,
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: const Text('View Details'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline),
-                            onPressed: () async {
-                              await wishlistProvider.removeFromWishlist(product);
-                              if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Removed from wishlist'),
-                                  duration: Duration(seconds: 1),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               );
             },

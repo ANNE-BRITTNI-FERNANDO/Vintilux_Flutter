@@ -91,4 +91,19 @@ class CartService {
       throw Exception('Failed to update cart item quantity: $e');
     }
   }
+  
+  Future<void> clearCart() async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.baseUrl + ApiConfig.clearCart),
+        headers: {'Content-Type': 'application/json'},
+      );
+      
+      if (response.statusCode != 200) {
+        throw Exception('Failed to clear cart');
+      }
+    } catch (e) {
+      throw Exception('Failed to clear cart: $e');
+    }
+  }
 }

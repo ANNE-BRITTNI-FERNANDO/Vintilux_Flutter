@@ -164,70 +164,65 @@ class _DeviceInfoScreenState extends State<DeviceInfoScreen> {
     required String title,
     required IconData icon,
     required List<String> details,
-    bool isAvailable = false,
+    bool isAvailable = true,
     VoidCallback? onRefresh,
   }) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      color: Theme.of(context).cardColor,
+      elevation: 4,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(icon, size: 24),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                Row(
+                  children: [
+                    Icon(icon, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
-                  ),
+                  ],
                 ),
                 if (onRefresh != null)
                   IconButton(
-                    icon: const Icon(Icons.refresh, size: 20),
+                    icon: const Icon(Icons.refresh),
                     onPressed: onRefresh,
-                  ),
-                if (!isAvailable)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      'Mobile Only',
-                      style: TextStyle(fontSize: 12),
-                    ),
+                    color: Theme.of(context).colorScheme.primary,
                   ),
               ],
             ),
-            if (!isAvailable) ...[
-              const SizedBox(height: 8),
+            const SizedBox(height: 12),
+            if (!isAvailable)
               Text(
                 'This feature is only available in the mobile app',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-            ] else ...[
-              const SizedBox(height: 12),
-              ...details.map((detail) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(
-                      detail,
-                      style: TextStyle(
-                        color: Colors.grey[800],
-                        height: 1.5,
-                      ),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontStyle: FontStyle.italic,
+                ),
+              )
+            else
+              ...details.map(
+                (detail) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(
+                    detail,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
-                  )),
-            ],
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -236,9 +231,8 @@ class _DeviceInfoScreenState extends State<DeviceInfoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Device Information'),
         actions: [
@@ -250,95 +244,89 @@ class _DeviceInfoScreenState extends State<DeviceInfoScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                if (kIsWeb)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.orange[100],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.orange[300]!),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.info_outline, color: Colors.orange),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Some features are only available in the mobile app',
-                            style: TextStyle(color: Colors.orange),
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  if (_error.isNotEmpty)
+                    Container(
+                      margin: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.errorContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: Theme.of(context).colorScheme.onErrorContainer,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                _buildInfoCard(
-                  title: 'System Time',
-                  icon: Icons.access_time,
-                  isAvailable: true,
-                  details: [
-                    'Current Time: ${now.hour}:${now.minute}:${now.second}',
-                    'Date: ${now.day}/${now.month}/${now.year}',
-                    'Time Zone: ${now.timeZoneName}',
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _buildInfoCard(
-                  title: 'Battery Status',
-                  icon: Icons.battery_charging_full,
-                  isAvailable: true,
-                  details: _batteryLevel < 0 
-                      ? ['Battery information not available']
-                      : [
-                          'Battery Level: $_batteryLevel%',
-                          'Status: ${_getBatteryStateString(_batteryState)}',
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _error,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onErrorContainer,
+                              ),
+                            ),
+                          ),
                         ],
-                ),
-                const SizedBox(height: 16),
-                _buildInfoCard(
-                  title: 'Location',
-                  icon: Icons.location_on,
-                  isAvailable: true,
-                  onRefresh: _getCurrentLocation,
-                  details: _locationError.isNotEmpty
-                      ? [_locationError]
-                      : _currentPosition != null
-                          ? [
-                              'Latitude: ${_currentPosition!.latitude.toStringAsFixed(6)}',
-                              'Longitude: ${_currentPosition!.longitude.toStringAsFixed(6)}',
-                              if (_currentAddress != null) 'Location: $_currentAddress',
-                              'Accuracy: ${_currentPosition!.accuracy.toStringAsFixed(1)} meters',
-                            ]
-                          : ['Getting location...'],
-                ),
-                const SizedBox(height: 16),
-                _buildInfoCard(
-                  title: 'Contacts',
-                  icon: Icons.contacts,
-                  isAvailable: !kIsWeb,
-                  details: _contacts.isEmpty
-                      ? ['No contacts available']
-                      : _contacts
-                          .take(5)
-                          .map((contact) =>
-                              '${contact.displayName ?? 'No Name'}: ${contact.phones?.firstOrNull?.value ?? 'No Phone'}')
-                          .toList(),
-                ),
-                const SizedBox(height: 16),
-                _buildInfoCard(
-                  title: 'Web Browser Info',
-                  icon: Icons.web,
-                  isAvailable: true,
-                  details: [
-                    'Platform: Web Browser',
-                    'User Agent: Chrome',
-                    'Window Size: ${MediaQuery.of(context).size.width.toInt()} x ${MediaQuery.of(context).size.height.toInt()}',
-                  ],
-                ),
-              ],
+                      ),
+                    ),
+                  _buildInfoCard(
+                    title: 'System Time',
+                    icon: Icons.access_time,
+                    details: [
+                      'Current Time: ${DateTime.now().toLocal().toString().split('.')[0]}',
+                      'Date: ${DateTime.now().toLocal().toString().split(' ')[0]}',
+                      'Time Zone: ${DateTime.now().timeZoneName}',
+                    ],
+                  ),
+                  _buildInfoCard(
+                    title: 'Battery Status',
+                    icon: Icons.battery_full,
+                    details: [
+                      'Battery Level: ${_batteryLevel >= 0 ? '$_batteryLevel%' : 'Unknown'}',
+                      'Status: ${_getBatteryStateString(_batteryState)}',
+                    ],
+                  ),
+                  _buildInfoCard(
+                    title: 'Location',
+                    icon: Icons.location_on,
+                    details: _locationError.isNotEmpty
+                        ? [_locationError]
+                        : [
+                            if (_currentPosition != null) ...[
+                              'Latitude: ${_currentPosition!.latitude}',
+                              'Longitude: ${_currentPosition!.longitude}',
+                              if (_currentAddress != null)
+                                'Address: $_currentAddress',
+                              'Accuracy: ${_currentPosition!.accuracy.toStringAsFixed(2)} meters',
+                            ],
+                          ],
+                    onRefresh: _getCurrentLocation,
+                  ),
+                  _buildInfoCard(
+                    title: 'Contacts',
+                    icon: Icons.contacts,
+                    isAvailable: !kIsWeb,
+                    details: kIsWeb
+                        ? []
+                        : [
+                            'Total Contacts: ${_contacts.length}',
+                            if (_contacts.isNotEmpty)
+                              'Last Updated: ${DateTime.now().toString().split('.')[0]}',
+                          ],
+                  ),
+                  _buildInfoCard(
+                    title: 'Web Browser Info',
+                    icon: Icons.web,
+                    details: [
+                      'Platform: ${kIsWeb ? 'Web Browser' : 'Mobile App'}',
+                    ],
+                  ),
+                ],
+              ),
             ),
     );
   }

@@ -7,11 +7,12 @@ import 'providers/product_provider.dart';
 import 'providers/profile_provider.dart';
 import 'providers/device_provider.dart';
 import 'providers/product_filter_provider.dart';
+import 'providers/theme_provider.dart';
 import 'services/auth_service.dart';
 import 'routes.dart';
-import 'screens/home/home_screen.dart';
+import 'screens/main_layout.dart';
 import 'screens/auth/login_screen.dart';
-import 'screens/auth/register_screen.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(
@@ -36,6 +37,9 @@ void main() {
         ChangeNotifierProvider(
           create: (_) => ProductFilterProvider(),
         ),
+        ChangeNotifierProvider(
+          create: (_) => ThemeProvider(),
+        ),
       ],
       child: const MyApp(),
     ),
@@ -47,46 +51,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Vintilux',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: const AppBarTheme(
-          elevation: 0,
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-        ),
-      ),
-      onGenerateRoute: generateRoute,
-      home: Consumer<AuthProvider>(
-        builder: (context, authProvider, child) {
-          return authProvider.isAuthenticated
-              ? const HomeScreen()
-              : const LoginScreen();
-        },
-      ),
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
-        '/home': (context) => const HomeScreen(),
+    return Consumer2<ThemeProvider, AuthProvider>(
+      builder: (context, themeProvider, authProvider, child) {
+        return MaterialApp(
+          title: 'Vintilux & Co.',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeProvider.themeMode,
+          home: authProvider.isAuthenticated 
+              ? const MainLayout()
+              : const LoginScreen(),
+          onGenerateRoute: generateRoute,
+        );
       },
     );
   }

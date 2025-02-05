@@ -1,12 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'product_model.dart';
 
+
 @immutable
 class CartItem {
   final String id;
   final Product product;
   final int quantity;
-  final String? color;
+  final String color; // Changed from String? to String to always have a color
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -14,7 +15,7 @@ class CartItem {
     required this.id,
     required this.product,
     required this.quantity,
-    this.color,
+    this.color = 'Default', // Set default color if none provided
     required this.createdAt,
     required this.updatedAt,
   });
@@ -24,7 +25,7 @@ class CartItem {
       id: json['id']?.toString() ?? '',
       product: Product.fromJson(json['product'] ?? {}),
       quantity: (json['quantity'] as num?)?.toInt() ?? 1,
-      color: json['color'] as String?,
+      color: json['color'] as String? ?? 'Default', // Always provide a color
       createdAt: json['created_at'] != null 
           ? DateTime.parse(json['created_at']) 
           : DateTime.now(),
@@ -37,7 +38,7 @@ class CartItem {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'product': product,
+      'product': product.toJson(), // Fixed: Call toJson on product
       'quantity': quantity,
       'color': color,
       'created_at': createdAt.toIso8601String(),

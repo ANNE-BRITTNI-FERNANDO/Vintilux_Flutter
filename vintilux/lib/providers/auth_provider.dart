@@ -56,7 +56,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> register(String name, String email, String password) async {
+  Future<bool> register(String name, String email, String password) async {
     try {
       _isLoading = true;
       _error = '';
@@ -73,11 +73,13 @@ class AuthProvider with ChangeNotifier {
       developer.log('User: ${_user?.toJson()}');
       
       _error = '';
+      return true;
     } catch (e) {
       developer.log('Registration error: $e');
       _error = e.toString();
       _user = null;
       _token = null;
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();
